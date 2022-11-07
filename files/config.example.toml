@@ -1,0 +1,21 @@
+# For start application rename it to config.toml !!
+
+[server]
+port = 3000
+
+[client]
+public_key = "CLIENT PUBLIC KEY"
+token = "CLIENT TOKEN"
+id = "CLIENT USER ID"
+
+[twitter]
+pub_key = ""
+secret_key = ""
+token = ""
+
+[commands]
+guild_id = "GUILD ID"
+
+[api]
+github_personal_access_token = ""
+github_webhooks_secret = ""

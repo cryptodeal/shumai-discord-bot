@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+      "plugins": [{ "name": "typescript-plugin-toml" }],
+      "lib": ["ESNext"],
+      "module": "esnext",
+      "target": "esnext",
+      "moduleResolution": "Node",
+      // "bun-types" is the important part
+      "types": ["bun-types"]
+    }
+}

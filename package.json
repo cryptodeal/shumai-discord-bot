@@ -1,0 +1,33 @@
+{
+	"version": "0.0.1",
+	"name": "shumai-discord-bot",
+	"scripts": {
+		"format": "eslint '**/*.{js,ts}' '*.{js,ts,cjs}' package.json --fix",
+		"cloudflare:tunnel": "cloudflared tunnel run shumai-bot",
+		"start": "bun src/index.ts",
+		"dev": "bun src/index.ts --dev",
+		"validate": "cd scripts/validateTags && bun install && bun start"
+	},
+	"devDependencies": {
+		"@typescript-eslint/eslint-plugin": "^5.42.0",
+		"@typescript-eslint/parser": "^5.42.0",
+		"bun-types": "^0.2.2",
+		"eslint": "^8.26.0",
+		"eslint-config-prettier": "^8.5.0",
+		"eslint-plugin-prettier": "^4.2.1",
+		"eslint-plugin-simple-import-sort": "^8.0.0",
+		"prettier": "^2.7.1",
+		"twitter-api-sdk": "^1.2.1",
+		"typescript": "^4.8.4",
+		"typescript-plugin-toml": "^0.2.0"
+	},
+	"dependencies": {
+		"@discordjs/collection": "^0.7.0",
+		"bun-utilities": "^0.2.1",
+		"create-hmac": "^1.1.7",
+		"discord-api-types": "^0.36.1",
+		"hono": "^1.6.4",
+		"minisearch": "^5.0.0",
+		"tweetnacl": "^1.0.3"
+	}
+}

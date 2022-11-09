@@ -25,6 +25,6 @@ export const {
 		args: [FFIType.i64]
 	},
 	execSearchStream: {
-		args: ['callback']
+		args: ['function']
 	}
 });

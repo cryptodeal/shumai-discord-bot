@@ -3,31 +3,33 @@ package main
 /*
 #include <stdlib.h>
 #include <string.h>
-typedef void (*CBFunction)(void*);
+typedef void (*CBFunction)(void*, unsigned);
 static inline void Invoke(void* res, CBFunction* callback) {
-	char* string = (char*)res;
-	(*callback)(string); 
+	char* cstr = (char*)res;
+	(*callback)(res, strlen(cstr));
 }
 */
 import "C"
-import "encoding/json"
-import "context"
-import "net/http"
-import "fmt"
-import "unsafe"
-import "time"
-import "github.com/michimani/gotwi"
-import "github.com/michimani/gotwi/tweet/filteredstream"
-import "github.com/michimani/gotwi/tweet/filteredstream/types"
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"time"
+	"unsafe"
 
-type ErrorJSON struct {
-	Error		bool		`json:"error,omitempty"`
-	Data		[]interface{}		`json:"data,omitempty"`
-	Message		string		`json:"message,omitempty"`
+	"github.com/michimani/gotwi"
+	"github.com/michimani/gotwi/tweet/filteredstream"
+	"github.com/michimani/gotwi/tweet/filteredstream/types"
+)
+
+type StreamJSON struct {
+	Error   bool          `json:"error,omitempty"`
+	Data    []interface{} `json:"data,omitempty"`
+	Message string        `json:"message,omitempty"`
 }
 
-
-var ACCESS_TOKEN = "";
+var ACCESS_TOKEN = ""
 
 //export setAccessToken
 func setAccessToken(token *C.char) *C.void {
@@ -35,10 +37,10 @@ func setAccessToken(token *C.char) *C.void {
 	return nil
 }
 
-/** 
-	*	creates a new gotwi.Client with a custom
-	* http.Client and arbitrary timeout arg
-	*/
+/**
+*	creates a new gotwi.Client with a custom
+* http.Client and arbitrary timeout arg
+ */
 func newGotwiClientWithTimeout(timeout int, token string) (*gotwi.Client, error) {
 	in := &gotwi.NewClientWithAccessTokenInput{
 		AccessToken: token,
@@ -50,15 +52,17 @@ func newGotwiClientWithTimeout(timeout int, token string) (*gotwi.Client, error)
 }
 
 /**
-	*	FFI Export: used to list search stream rules
-	*/
+*	FFI Export: used to list search stream rules
+ */
 //export listSearchStreamRules
 func listSearchStreamRules() *C.char {
+	fmt.Println("start - listSearchStreamRules")
 	c, err := newGotwiClientWithTimeout(30, ACCESS_TOKEN)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
+		errFmt := &StreamJSON{
+			Error:   true,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		return C.CString(string(errJSON))
 	}
@@ -66,32 +70,37 @@ func listSearchStreamRules() *C.char {
 	p := &types.ListRulesInput{}
 	res, err := filteredstream.ListRules(context.Background(), c, p)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
+		errFmt := &StreamJSON{
+			Error:   true,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		return C.CString(string(errJSON))
 	}
 
 	out, err := json.Marshal(res)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
+		errFmt := &StreamJSON{
+			Error:   true,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		return C.CString(string(errJSON))
 	}
+	fmt.Println("end - listSearchStreamRules")
 	return C.CString(string(out))
 }
 
 //export deleteSearchStreamRule
 func deleteSearchStreamRule(rule_id_char *C.char) *C.char {
+	fmt.Println("start - deleteSearchStreamRule")
 	ruleID := C.GoString(rule_id_char)
 	c, err := newGotwiClientWithTimeout(30, ACCESS_TOKEN)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
+		errFmt := &StreamJSON{
+			Error:   true,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		return C.CString(string(errJSON))
 	}
@@ -106,35 +115,40 @@ func deleteSearchStreamRule(rule_id_char *C.char) *C.char {
 
 	res, err := filteredstream.DeleteRules(context.TODO(), c, p)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
+		errFmt := &StreamJSON{
+			Error:   true,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		return C.CString(string(errJSON))
 	}
 
 	out, err := json.Marshal(res)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
+		errFmt := &StreamJSON{
+			Error:   true,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		return C.CString(string(errJSON))
 	}
+	fmt.Println("end - deleteSearchStreamRule")
 	return C.CString(string(out))
 }
 
 /**
-	*	adds a rule to the search stream
-	*/
+*	adds a rule to the search stream
+ */
 //export addSearchStreamRule
 func addSearchStreamRule(keyword_char *C.char) *C.char {
+	fmt.Println("start - addSearchStreamRule")
 	keyword := C.GoString(keyword_char)
 	c, err := newGotwiClientWithTimeout(30, ACCESS_TOKEN)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
+		errFmt := &StreamJSON{
+			Error:   true,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		return C.CString(string(errJSON))
 	}
@@ -147,37 +161,41 @@ func addSearchStreamRule(keyword_char *C.char) *C.char {
 
 	res, err := filteredstream.CreateRules(context.TODO(), c, p)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
+		errFmt := &StreamJSON{
+			Error:   true,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		return C.CString(string(errJSON))
 	}
 
 	out, err := json.Marshal(res)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
+		errFmt := &StreamJSON{
+			Error:   true,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		return C.CString(string(errJSON))
 	}
+	fmt.Println("end - addSearchStreamRule")
 	return C.CString(string(out))
 }
 
-
 //export execSearchStream
-func execSearchStream(callback *C.CBFunction) {
-	fmt.Println("execSearchStream")
-	fmt.Println(callback)
+func execSearchStream(callback C.CBFunction) {
+	f := &callback
+	fmt.Println("start - execSearchStream")
 	c, err := newGotwiClientWithTimeout(120, ACCESS_TOKEN)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
+		errFmt := &StreamJSON{
+			Error:   true,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		str := unsafe.Pointer(C.CString(string(errJSON)))
-		C.Invoke(str, callback)
+		// defer C.free(str)
+		C.Invoke(str, f)
 	}
 
 	p := &types.SearchStreamInput{}
@@ -185,7 +203,7 @@ func execSearchStream(callback *C.CBFunction) {
 	if err != nil {
 		fmt.Println(err)
 	}
-  feed := []interface{}{}
+	feed := []interface{}{}
 	cnt := 0
 	for s.Receive() {
 		t, err := s.Read()
@@ -194,29 +212,37 @@ func execSearchStream(callback *C.CBFunction) {
 		} else {
 			if t != nil {
 				cnt++
+				// TODO: might need to parse tweets as they come in?
 				feed = append(feed, t)
 			}
 		}
 
-		if cnt > 5 {
-			s.Stop() 
+		if cnt > 10 {
+			s.Stop()
 			break
 		}
 	}
-	out, err := json.Marshal(feed)
-	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
+	out_data := &StreamJSON{
 		Data: feed,
-		Message: err.Error()}
+	}
+	out, err := json.Marshal(out_data)
+	if err != nil {
+		fmt.Println(err)
+		errFmt := &StreamJSON{
+			Error:   true,
+			Data:    feed,
+			Message: err.Error(),
+		}
 		errJSON, _ := json.Marshal(errFmt)
 		str := unsafe.Pointer(C.CString(string(errJSON)))
-		defer C.free(str)
-		C.Invoke(str, callback)
+		// defer C.free(str)
+		C.Invoke(str, f)
 	}
+	fmt.Println(string(out))
 	str := unsafe.Pointer(C.CString(string(out)))
-	fmt.Println("str pointer", str)
-	C.Invoke(str, callback)
+	// defer C.free(str)
+	fmt.Println("end - execSearchStream")
+	C.Invoke(str, f)
 }
 
 func main() {} // unused, but required for compile

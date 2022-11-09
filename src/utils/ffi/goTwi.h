@@ -23,10 +23,10 @@ typedef struct { const char *p; ptrdiff_t n; } _GoString_;
 
 #include <stdlib.h>
 #include <string.h>
-typedef void (*CBFunction)(void*);
-static inline void Invoke(void* res, CBFunction callback) {
-	char* string = (char*)res;
-	(*callback)(string); 
+typedef void (*CBFunction)(void*, unsigned);
+static inline void Invoke(void* res, CBFunction* callback) {
+	char* cstr = (char*)res;
+	(*callback)(res, strlen(cstr));
 }
 
 #line 1 "cgo-generated-wrapper"
@@ -88,16 +88,16 @@ extern "C" {
 extern void* setAccessToken(char* token);
 
 /**
-	*	FFI Export: used to list search stream rules
-	*/
+*	FFI Export: used to list search stream rules
+ */
 extern char* listSearchStreamRules();
 extern char* deleteSearchStreamRule(char* rule_id_char);
 
 /**
-	*	adds a rule to the search stream
-	*/
+*	adds a rule to the search stream
+ */
 extern char* addSearchStreamRule(char* keyword_char);
-extern void execSearchStream(CBFunction* callback);
+extern void execSearchStream(CBFunction callback);
 
 #ifdef __cplusplus
 }

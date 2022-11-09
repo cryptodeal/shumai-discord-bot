@@ -36,6 +36,7 @@ await db.exec(
 const addToDb = db.prepare(
 	'INSERT INTO issuesandprs (repository, title, number, state, created_at, closed_at, merged_at, html_url, user_login, user_html_url, type, draft) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
 );
+const testRecord = db.prepare('SELECT * FROM issuesandprs WHERE number = ?');
 
 export let issues = 0;
 export let pulls = 0;
@@ -60,6 +61,9 @@ export const fetchIssues = async () => {
 
 			for (const issue of res) {
 				if ('pull_request' in issue) continue;
+				if (testRecord.get(issue.number)) {
+					db.exec(`DELETE FROM issuesandprs WHERE number = ${issue.number}`);
+				}
 
 				// @ts-expect-error it works
 				await addToDb.run([
@@ -113,6 +117,9 @@ export const fetchPullRequests = async () => {
 			).json()) as any;
 
 			for (const pull of res) {
+				if (testRecord.get(pull.number)) {
+					db.exec(`DELETE FROM issuesandprs WHERE number = ${pull.number}`);
+				}
 				// @ts-expect-error it works
 				await addToDb.run([
 					pull.html_url.replace('https://github.com/', '').replace(`/pull/${pull.number}`, ''),

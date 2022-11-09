@@ -24,9 +24,9 @@ typedef struct { const char *p; ptrdiff_t n; } _GoString_;
 #include <stdlib.h>
 #include <string.h>
 typedef void (*CBFunction)(void*);
-static inline void Invoke(void* res, CBFunction *callback) {
+static inline void Invoke(void* res, CBFunction callback) {
 	char* string = (char*)res;
-	(*callback)(res); 
+	(*callback)(string); 
 }
 
 #line 1 "cgo-generated-wrapper"

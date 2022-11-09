@@ -4,9 +4,9 @@ package main
 #include <stdlib.h>
 #include <string.h>
 typedef void (*CBFunction)(void*);
-static inline void Invoke(void* res, CBFunction *callback) {
+static inline void Invoke(void* res, CBFunction* callback) {
 	char* string = (char*)res;
-	(*callback)(res); 
+	(*callback)(string); 
 }
 */
 import "C"
@@ -177,58 +177,28 @@ func execSearchStream(callback *C.CBFunction) {
 		Message: err.Error()}
 		errJSON, _ := json.Marshal(errFmt)
 		str := unsafe.Pointer(C.CString(string(errJSON)))
-		defer C.free(str)
 		C.Invoke(str, callback)
 	}
 
 	p := &types.SearchStreamInput{}
 	s, err := filteredstream.SearchStream(context.Background(), c, p)
 	if err != nil {
-		errFmt := &ErrorJSON{
-		Error: true,
-		Message: err.Error()}
-		errJSON, _ := json.Marshal(errFmt)
-		str := unsafe.Pointer(C.CString(string(errJSON)))
-		defer C.free(str)
-		C.Invoke(str, callback)
+		fmt.Println(err)
 	}
   feed := []interface{}{}
 	cnt := 0
 	for s.Receive() {
 		t, err := s.Read()
 		if err != nil {
-			errFmt := &ErrorJSON{
-			Error: true,
-			Data: feed,
-			Message: err.Error()}
-			errJSON, _ := json.Marshal(errFmt)
-			str := unsafe.Pointer(C.CString(string(errJSON)))
-			defer C.free(str)
-			C.Invoke(str, callback)
+			fmt.Println(err)
 		} else {
 			if t != nil {
 				cnt++
 				feed = append(feed, t)
-				
-					out, err := json.Marshal(feed)
-					if err != nil {
-						errFmt := &ErrorJSON{
-						Error: true,
-						Data: feed,
-						Message: err.Error()}
-						errJSON, _ := json.Marshal(errFmt)
-						str := unsafe.Pointer(C.CString(string(errJSON)))
-						defer C.free(str)
-						C.Invoke(str, callback)
-					}
-					str := unsafe.Pointer(C.CString(string(out)))
-					fmt.Println(str)
-					defer C.free(str)
-					C.Invoke(str, callback)
 			}
 		}
 
-		if cnt > 100 {
+		if cnt > 5 {
 			s.Stop() 
 			break
 		}
@@ -245,7 +215,7 @@ func execSearchStream(callback *C.CBFunction) {
 		C.Invoke(str, callback)
 	}
 	str := unsafe.Pointer(C.CString(string(out)))
-	defer C.free(str)
+	fmt.Println("str pointer", str)
 	C.Invoke(str, callback)
 }
 

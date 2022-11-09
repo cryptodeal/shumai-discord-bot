@@ -1,35 +1,33 @@
-import config from '../../files/config.toml';
 import { fetchApi } from '.';
-import type { searchStream } from './twitter_oapi_types';
+import type {
+	searchStreamAnnotation,
+	searchStreamHashtag,
+	searchStreamMention,
+	searchStreamUrl
+} from './twitter_oapi_types';
+
 const rulesURL = 'https://api.twitter.com/2/tweets/search/stream/rules';
-const streamURL = 'https://api.twitter.com/2/tweets/search/stream';
+const streamURL =
+	'https://api.twitter.com/2/tweets/search/stream?tweet.fields=edit_history_tweet_ids,entities,id,lang,possibly_sensitive,text';
 
-// https://stackoverflow.com/a/50375286
-export type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (
-	k: infer I
-) => void
-	? I
-	: never;
+export interface ITweetStream {
+	data: {
+		edit_history_tweet_ids: string[];
+		id: string;
+		lang?: string;
+		possibly_sensitive: boolean;
+		text: string;
+		entities?: {
+			annotations?: searchStreamAnnotation[];
+			hashtags?: searchStreamHashtag[];
+			urls?: searchStreamUrl[];
+			mentions?: searchStreamMention[];
+		};
+	};
+	matching_rules: { id: string; tag: string }[];
+}
 
-export type GetContent<T> = 'content' extends keyof T
-	? ResponseType extends keyof T['content']
-		? T['content'][ResponseType]
-		: never
-	: never;
-
-export type SuccessStatus = 200 | 201;
-
-export type GetSuccess<T> = {
-	[K in SuccessStatus & keyof T]: GetContent<T[K]>;
-}[SuccessStatus & keyof T];
-
-export type TwitterResponse<T> = UnionToIntersection<ExtractTwitterResponse<T>>;
-
-export type ExtractTwitterResponse<T> = 'responses' extends keyof T
-	? GetSuccess<T['responses']>
-	: never;
-
-export type StreamRule = { [key: string]: string } & { value: string; tag: string };
+export type StreamRule = { [key: string]: string } & { value: string; tag?: string };
 export type StreamRules = StreamRule[];
 
 export class TwitterClient {
@@ -59,7 +57,7 @@ export class TwitterClient {
 	public addStreamRules(rules: StreamRules) {
 		return fetchApi.post(
 			rulesURL,
-			{ add: rules },
+			{ add: rules.map(({ value }) => ({ value, tag: value })) },
 			{
 				headers: {
 					'content-type': 'application/json',
@@ -86,7 +84,7 @@ export class TwitterClient {
 			}
 		);
 	}
-  private async *stream<T>(): AsyncGenerator<T> {
+	private async *stream<T>(): AsyncGenerator<T> {
 		const { stdout, kill } = Bun.spawn([
 			'curl',
 			streamURL,
@@ -111,5 +109,5 @@ export class TwitterClient {
 		}
 	}
 
-	public searchStream = ():AsyncGenerator<TwitterResponse<searchStream>> => this.stream<TwitterResponse<searchStream>>();
+	public searchStream = (): AsyncGenerator<ITweetStream> => this.stream<ITweetStream>();
 }

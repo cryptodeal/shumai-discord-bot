@@ -1,18 +1,22 @@
 import config from '../files/config.toml';
-import { StreamRules, TwitterClient } from '../src/utils/twitter';
+import { AddingRules } from '../src/utils/ffi/gen_types/goTwi/filteredStream';
+import { TwitterClient } from '../src/utils/twitter';
 import { tweetHandler } from '../src/utils/twitterUtils';
 
 const client = new TwitterClient({ token: config.twitter.token });
 
 // Edit rules as desired below
-const rules: StreamRules = [
+const rules: AddingRules = [
 	{
 		value:
-			'(shumai OR (url:"https://github.com/facebookresearch/shumai" OR url_title:shumai OR url_description:shumai OR url_contains:shumai)) lang:en -is:retweet'
+			'shumai OR (url_title:shumai OR url_description:shumai OR url_contains:shumai) lang:en -is:retweet'
+	},
+	{
+		value: 'url:"https://github.com/facebookresearch/shumai" -is:retweet'
 	},
 	{
 		value:
-			'(Tensor OR " ML " OR (Machine Learning) OR " AI " OR (Artificial Intelligence)) lang:en -is:retweet'
+			'(Tensor OR #ML OR "Machine Learning" OR #AI OR "Artificial Intelligence") (Javascript OR #JS OR Typescript OR #TS) lang:en -is:retweet'
 	},
 	{
 		value: '(bun OR bun.sh OR oven.sh) lang:en -is:retweet'

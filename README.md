@@ -27,6 +27,22 @@ Informations:
 
 FFI uses CGo, which provides the flexibility of a GC lang like Go, w access to C generated code. This + bun is really easy to work with imo.
 
+We use the Golang module `cryptodeal/tygo` (a fork of Tygo, which is modified to support enums) to generate Typescript types (TODO: possibly generate Bun FFI wrapper???)
+
+To generate the types, any configuration changes will need to be made in `tygo.yaml` [see `cryptodeal/tygo` Docs](https://github.com/cryptodeal/tygo/blob/main/README.md) for help editing config.
+
+Ensure you have `cryptodeal/tygo` installed:
+
+```sh
+go install github.com/cryptodeal/tygo@latest
+```
+
+Then run:
+
+```sh
+tygo generate
+```
+
 To build the bindings, from root dir, run:
 
 ```sh

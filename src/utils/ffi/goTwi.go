@@ -6,14 +6,13 @@ package main
 typedef void (*CBFunction)(void*, unsigned);
 static inline void Invoke(void* res, CBFunction* callback) {
 	char* cstr = (char*)res;
-	(*callback)(res, strlen(cstr));
+	return (*callback)(res, strlen(cstr));
 }
 */
 import "C"
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 	"unsafe"
@@ -24,9 +23,12 @@ import (
 )
 
 type StreamJSON struct {
-	Error   bool          `json:"error,omitempty"`
-	Data    []interface{} `json:"data,omitempty"`
-	Message string        `json:"message,omitempty"`
+	Data *types.SearchStreamOutput `json:"data,omitempty"`
+}
+
+type GoTwiError struct {
+	Error   bool   `json:"error,omitempty"`
+	Message string `json:"message,omitempty"`
 }
 
 var ACCESS_TOKEN = ""
@@ -56,53 +58,60 @@ func newGotwiClientWithTimeout(timeout int, token string) (*gotwi.Client, error)
  */
 //export listSearchStreamRules
 func listSearchStreamRules() *C.char {
-	fmt.Println("start - listSearchStreamRules")
 	c, err := newGotwiClientWithTimeout(30, ACCESS_TOKEN)
 	if err != nil {
-		errFmt := &StreamJSON{
+		errFmt := &GoTwiError{
 			Error:   true,
 			Message: err.Error(),
 		}
 		errJSON, _ := json.Marshal(errFmt)
-		return C.CString(string(errJSON))
+		out := C.CString(string(errJSON))
+		defer C.free(unsafe.Pointer(out))
+		return out
 	}
 
 	p := &types.ListRulesInput{}
 	res, err := filteredstream.ListRules(context.Background(), c, p)
 	if err != nil {
-		errFmt := &StreamJSON{
+		errFmt := &GoTwiError{
 			Error:   true,
 			Message: err.Error(),
 		}
 		errJSON, _ := json.Marshal(errFmt)
-		return C.CString(string(errJSON))
+		out := C.CString(string(errJSON))
+		defer C.free(unsafe.Pointer(out))
+		return out
 	}
 
 	out, err := json.Marshal(res)
 	if err != nil {
-		errFmt := &StreamJSON{
+		errFmt := &GoTwiError{
 			Error:   true,
 			Message: err.Error(),
 		}
 		errJSON, _ := json.Marshal(errFmt)
-		return C.CString(string(errJSON))
+		out := C.CString(string(errJSON))
+		defer C.free(unsafe.Pointer(out))
+		return out
 	}
-	fmt.Println("end - listSearchStreamRules")
-	return C.CString(string(out))
+	result := C.CString(string(out))
+	defer C.free(unsafe.Pointer(result))
+	return result
 }
 
 //export deleteSearchStreamRule
 func deleteSearchStreamRule(rule_id_char *C.char) *C.char {
-	fmt.Println("start - deleteSearchStreamRule")
 	ruleID := C.GoString(rule_id_char)
 	c, err := newGotwiClientWithTimeout(30, ACCESS_TOKEN)
 	if err != nil {
-		errFmt := &StreamJSON{
+		errFmt := &GoTwiError{
 			Error:   true,
 			Message: err.Error(),
 		}
 		errJSON, _ := json.Marshal(errFmt)
-		return C.CString(string(errJSON))
+		out := C.CString(string(errJSON))
+		defer C.free(unsafe.Pointer(out))
+		return out
 	}
 
 	p := &types.DeleteRulesInput{
@@ -115,25 +124,30 @@ func deleteSearchStreamRule(rule_id_char *C.char) *C.char {
 
 	res, err := filteredstream.DeleteRules(context.TODO(), c, p)
 	if err != nil {
-		errFmt := &StreamJSON{
+		errFmt := &GoTwiError{
 			Error:   true,
 			Message: err.Error(),
 		}
 		errJSON, _ := json.Marshal(errFmt)
-		return C.CString(string(errJSON))
+		out := C.CString(string(errJSON))
+		defer C.free(unsafe.Pointer(out))
+		return out
 	}
 
 	out, err := json.Marshal(res)
 	if err != nil {
-		errFmt := &StreamJSON{
+		errFmt := &GoTwiError{
 			Error:   true,
 			Message: err.Error(),
 		}
 		errJSON, _ := json.Marshal(errFmt)
-		return C.CString(string(errJSON))
+		out := C.CString(string(errJSON))
+		defer C.free(unsafe.Pointer(out))
+		return out
 	}
-	fmt.Println("end - deleteSearchStreamRule")
-	return C.CString(string(out))
+	result := C.CString(string(out))
+	defer C.free(unsafe.Pointer(result))
+	return result
 }
 
 /**
@@ -141,16 +155,17 @@ func deleteSearchStreamRule(rule_id_char *C.char) *C.char {
  */
 //export addSearchStreamRule
 func addSearchStreamRule(keyword_char *C.char) *C.char {
-	fmt.Println("start - addSearchStreamRule")
 	keyword := C.GoString(keyword_char)
 	c, err := newGotwiClientWithTimeout(30, ACCESS_TOKEN)
 	if err != nil {
-		errFmt := &StreamJSON{
+		errFmt := &GoTwiError{
 			Error:   true,
 			Message: err.Error(),
 		}
 		errJSON, _ := json.Marshal(errFmt)
-		return C.CString(string(errJSON))
+		out := C.CString(string(errJSON))
+		defer C.free(unsafe.Pointer(out))
+		return out
 	}
 
 	p := &types.CreateRulesInput{
@@ -161,88 +176,77 @@ func addSearchStreamRule(keyword_char *C.char) *C.char {
 
 	res, err := filteredstream.CreateRules(context.TODO(), c, p)
 	if err != nil {
-		errFmt := &StreamJSON{
+		errFmt := &GoTwiError{
 			Error:   true,
 			Message: err.Error(),
 		}
 		errJSON, _ := json.Marshal(errFmt)
-		return C.CString(string(errJSON))
+		out := C.CString(string(errJSON))
+		defer C.free(unsafe.Pointer(out))
+		return out
 	}
 
 	out, err := json.Marshal(res)
 	if err != nil {
-		errFmt := &StreamJSON{
+		errFmt := &GoTwiError{
 			Error:   true,
 			Message: err.Error(),
 		}
 		errJSON, _ := json.Marshal(errFmt)
-		return C.CString(string(errJSON))
+		out := C.CString(string(errJSON))
+		defer C.free(unsafe.Pointer(out))
+		return out
 	}
-	fmt.Println("end - addSearchStreamRule")
-	return C.CString(string(out))
+	result := C.CString(string(out))
+	defer C.free(unsafe.Pointer(result))
+	return result
+}
+
+func handleError(err error, callback *C.CBFunction) {
+	errFmt := &GoTwiError{
+		Error:   true,
+		Message: err.Error(),
+	}
+	errJSON, _ := json.Marshal(errFmt)
+	str := unsafe.Pointer(C.CString(string(errJSON)))
+	defer C.free(str)
+	C.Invoke(str, callback)
 }
 
 //export execSearchStream
-func execSearchStream(callback C.CBFunction) {
+func execSearchStream(params *C.char, callback C.CBFunction) {
 	f := &callback
-	fmt.Println("start - execSearchStream")
-	c, err := newGotwiClientWithTimeout(120, ACCESS_TOKEN)
+	c, err := newGotwiClientWithTimeout(0, ACCESS_TOKEN)
 	if err != nil {
-		errFmt := &StreamJSON{
-			Error:   true,
-			Message: err.Error(),
-		}
-		errJSON, _ := json.Marshal(errFmt)
-		str := unsafe.Pointer(C.CString(string(errJSON)))
-		// defer C.free(str)
-		C.Invoke(str, f)
+		handleError(err, f)
 	}
 
-	p := &types.SearchStreamInput{}
+	var p = &types.SearchStreamInput{}
+	err = json.Unmarshal([]byte(C.GoString(params)), p)
+	if err != nil {
+		handleError(err, f)
+	}
 	s, err := filteredstream.SearchStream(context.Background(), c, p)
 	if err != nil {
-		fmt.Println(err)
+		handleError(err, f)
 	}
-	feed := []interface{}{}
-	cnt := 0
+
 	for s.Receive() {
 		t, err := s.Read()
 		if err != nil {
-			fmt.Println(err)
+			handleError(err, f)
 		} else {
 			if t != nil {
-				cnt++
-				// TODO: might need to parse tweets as they come in?
-				feed = append(feed, t)
+				out, err := json.Marshal(t)
+				if err != nil {
+					handleError(err, f)
+				}
+				str := unsafe.Pointer(C.CString(string(out)))
+				defer C.free(str)
+				C.Invoke(str, f)
 			}
 		}
-
-		if cnt > 10 {
-			s.Stop()
-			break
-		}
 	}
-	out_data := &StreamJSON{
-		Data: feed,
-	}
-	out, err := json.Marshal(out_data)
-	if err != nil {
-		fmt.Println(err)
-		errFmt := &StreamJSON{
-			Error:   true,
-			Data:    feed,
-			Message: err.Error(),
-		}
-		errJSON, _ := json.Marshal(errFmt)
-		str := unsafe.Pointer(C.CString(string(errJSON)))
-		// defer C.free(str)
-		C.Invoke(str, f)
-	}
-	fmt.Println(string(out))
-	str := unsafe.Pointer(C.CString(string(out)))
-	// defer C.free(str)
-	fmt.Println("end - execSearchStream")
-	C.Invoke(str, f)
 }
 
 func main() {} // unused, but required for compile

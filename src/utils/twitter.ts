@@ -1,34 +1,14 @@
 import { fetchApi } from '.';
-import type {
-	searchStreamAnnotation,
-	searchStreamHashtag,
-	searchStreamMention,
-	searchStreamUrl
-} from './twitter_oapi_types';
+import {
+	AddingRules,
+	CreateRulesOutput,
+	ListRulesOutput,
+	SearchStreamOutput
+} from './ffi/gen_types/goTwi/filteredStream';
 
 const rulesURL = 'https://api.twitter.com/2/tweets/search/stream/rules';
 const streamURL =
 	'https://api.twitter.com/2/tweets/search/stream?tweet.fields=edit_history_tweet_ids,entities,id,lang,possibly_sensitive,text';
-
-export interface ITweetStream {
-	data: {
-		edit_history_tweet_ids: string[];
-		id: string;
-		lang?: string;
-		possibly_sensitive: boolean;
-		text: string;
-		entities?: {
-			annotations?: searchStreamAnnotation[];
-			hashtags?: searchStreamHashtag[];
-			urls?: searchStreamUrl[];
-			mentions?: searchStreamMention[];
-		};
-	};
-	matching_rules: { id: string; tag: string }[];
-}
-
-export type StreamRule = { [key: string]: string } & { value: string; tag?: string };
-export type StreamRules = StreamRule[];
 
 export class TwitterClient {
 	private bearer_token: string;
@@ -54,7 +34,7 @@ export class TwitterClient {
 		});
 	}
 
-	public addStreamRules(rules: StreamRules) {
+	public addStreamRules(rules: AddingRules) {
 		return fetchApi.post(
 			rulesURL,
 			{ add: rules.map(({ value }) => ({ value, tag: value })) },
@@ -67,7 +47,7 @@ export class TwitterClient {
 		);
 	}
 
-	public deleteStreamRules(rules) {
+	public deleteStreamRules(rules: ListRulesOutput | CreateRulesOutput) {
 		if (!Array.isArray(rules.data)) {
 			return null;
 		}
@@ -109,5 +89,5 @@ export class TwitterClient {
 		}
 	}
 
-	public searchStream = (): AsyncGenerator<ITweetStream> => this.stream<ITweetStream>();
+	public searchStream = (): AsyncGenerator<SearchStreamOutput> => this.stream<SearchStreamOutput>();
 }

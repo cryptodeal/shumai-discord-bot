@@ -1,29 +1,38 @@
-import { CString, FFIType, JSCallback, ptr } from 'bun:ffi';
+import { CString, FFIType, JSCallback } from 'bun:ffi';
 import config from '../files/config.toml';
-import { execSearchStream, listSearchStreamRules, setAccessToken } from '../src/utils/ffi/twitter';
+import { SearchStreamOutput } from '../src/utils/ffi/gen_types/goTwi/filteredStream';
+import {
+	type GoTwiStreamError,
+	isStreamError,
+	listSearchStreamRules,
+	setAccessToken,
+	streamTweets
+} from '../src/utils/ffi/twitter';
+import { tweetHandler } from '../src/utils/twitterUtils';
+let goCallback = genCallback();
 
-const data: any[] = [];
-
-const stream = () => <Promise<string>>new Promise((resolve) => {
-		const goCallback = new JSCallback(
-			(p, len) => {
-				console.log('ptr:', p, 'len:', len);
-				const str = new CString(p, 0, len).toString();
-				// logs the stringifed JSON object correctly
-				console.log(str);
-				return ptr(Buffer.from(str + '\0', 'utf8'));
-			},
-			{
-				args: [FFIType.ptr, FFIType.u32],
-				returns: FFIType.cstring
+function genCallback(): JSCallback {
+	return new JSCallback(
+		(p, len) => {
+			const str = new CString(p, 0, len).toString();
+			const json = <SearchStreamOutput | GoTwiStreamError>JSON.parse(str);
+			if (isStreamError(json)) {
+				console.error(json.message);
+				goCallback.close();
+				goCallback = genCallback();
+				streamTweets(goCallback.ptr);
+				return;
 			}
-		);
-		const res = execSearchStream(goCallback);
-		console.log(res);
-		console.log(res.toString());
-		resolve(JSON.parse(res.toString()));
-	});
+			console.log(json);
+			tweetHandler(json);
+		},
+		{
+			args: [FFIType.ptr, FFIType.u32]
+		}
+	);
+}
+
 setAccessToken(Buffer.from(`${config.twitter.token}\0`, 'utf8'));
-console.log(listSearchStreamRules());
-const out = await stream();
-console.log(out);
+listSearchStreamRules();
+streamTweets(goCallback.ptr);
+console.log('non-blocking!! :) \n');

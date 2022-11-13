@@ -26,7 +26,7 @@ typedef struct { const char *p; ptrdiff_t n; } _GoString_;
 typedef void (*CBFunction)(void*, unsigned);
 static inline void Invoke(void* res, CBFunction* callback) {
 	char* cstr = (char*)res;
-	(*callback)(res, strlen(cstr));
+	return (*callback)(res, strlen(cstr));
 }
 
 #line 1 "cgo-generated-wrapper"
@@ -97,7 +97,7 @@ extern char* deleteSearchStreamRule(char* rule_id_char);
 *	adds a rule to the search stream
  */
 extern char* addSearchStreamRule(char* keyword_char);
-extern void execSearchStream(CBFunction callback);
+extern void execSearchStream(char* params, CBFunction callback);
 
 #ifdef __cplusplus
 }

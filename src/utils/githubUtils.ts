@@ -36,7 +36,7 @@ await db.exec(
 const addToDb = db.prepare(
 	'INSERT INTO issuesandprs (repository, title, number, state, created_at, closed_at, merged_at, html_url, user_login, user_html_url, type, draft) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
 );
-const testRecord = db.prepare('SELECT * FROM issuesandprs WHERE number = ?');
+const testRecord = db.prepare('SELECT * FROM issuesandprs WHERE number = ? AND repository = ?');
 
 export let issues = 0;
 export let pulls = 0;
@@ -61,26 +61,28 @@ export const fetchIssues = async () => {
 
 			for (const issue of res) {
 				if ('pull_request' in issue) continue;
-				if (testRecord.get(issue.number)) {
-					db.exec(`DELETE FROM issuesandprs WHERE number = ${issue.number}`);
+				const exists = testRecord.get(issue.number, issue.repository);
+				if (exists) {
+					db.exec(
+						`UPDATE issuesandprs SET state = '${issue.state}', closed_at = '${issue.closed_at}', title = '${issue.title}' WHERE number = ${issue.number} AND repository = '${issue.repository}'`
+					);
+				} else {
+					addToDb.run(
+						issue.repository,
+						issue.title,
+						issue.number,
+						issue.state,
+						issue.created_at,
+						issue.closed_at,
+						null,
+						issue.html_url,
+						issue.user_login,
+						issue.user_html_url,
+						'(IS)',
+						null
+					);
+					issues++;
 				}
-
-				// @ts-expect-error it works
-				await addToDb.run([
-					issue.repository_url.replace('https://api.github.com/repos/', ''),
-					issue.title,
-					issue.number,
-					issue.state,
-					issue.created_at,
-					issue.closed_at,
-					null,
-					issue.html_url,
-					issue.user.login,
-					issue.user.html_url,
-					'(IS)',
-					null
-				]);
-				issues++;
 			}
 
 			Logger.debug(`Fetching issues for ${repository} - ${issues} * ${page}`);
@@ -117,25 +119,28 @@ export const fetchPullRequests = async () => {
 			).json()) as any;
 
 			for (const pull of res) {
-				if (testRecord.get(pull.number)) {
-					db.exec(`DELETE FROM issuesandprs WHERE number = ${pull.number}`);
+				const exists = testRecord.get(pull.number, pull.repository);
+				if (exists) {
+					db.exec(
+						`UPDATE issuesandprs SET state = '${pull.state}', closed_at = '${pull.closed_at}', merged_at = '${pull.merged_at}', title = '${pull.title}' WHERE number = ${pull.number} AND repository = '${pull.repository}'`
+					);
+				} else {
+					addToDb.run(
+						pull.html_url.replace('https://github.com/', '').replace(`/pull/${pull.number}`, ''),
+						pull.title,
+						pull.number,
+						pull.state,
+						pull.created_at,
+						pull.closed_at,
+						pull.merged_at,
+						pull.html_url,
+						pull.user.login,
+						pull.user.html_url,
+						'(PR)',
+						pull.draft
+					);
+					pulls++;
 				}
-				// @ts-expect-error it works
-				await addToDb.run([
-					pull.html_url.replace('https://github.com/', '').replace(`/pull/${pull.number}`, ''),
-					pull.title,
-					pull.number,
-					pull.state,
-					pull.created_at,
-					pull.closed_at,
-					pull.merged_at,
-					pull.html_url,
-					pull.user.login,
-					pull.user.html_url,
-					'(PR)',
-					pull.draft
-				]);
-				pulls++;
 			}
 
 			Logger.debug(`Fetching pull requests for ${repository} - ${pulls} * ${page}`);
@@ -162,11 +167,7 @@ export const setIssue = async (issue: Issue) => {
 			`UPDATE issuesandprs SET state = '${issue.state}', closed_at = '${issue.closed_at}', title = '${issue.title}' WHERE number = ${issue.number} AND repository = '${issue.repository}'`
 		);
 	} else {
-		/**
-		 * works, but should probably type correctly
-		 *
-		 * @ts-expect-error */
-		addToDb.run([
+		addToDb.run(
 			issue.repository,
 			issue.title,
 			issue.number,
@@ -179,24 +180,18 @@ export const setIssue = async (issue: Issue) => {
 			issue.user_html_url,
 			'(IS)',
 			null
-		]);
+		);
 	}
 };
 
 export const setPullRequest = async (pull: PullRequest) => {
-	const exists = await db
-		.prepare(`SELECT * FROM issuesandprs WHERE number = ? AND repository = ?`)
-		.get(pull.number, pull.repository);
+	const exists = testRecord.get(pull.number, pull.repository);
 	if (exists) {
 		db.exec(
 			`UPDATE issuesandprs SET state = '${pull.state}', closed_at = '${pull.closed_at}', merged_at = '${pull.merged_at}', title = '${pull.title}' WHERE number = ${pull.number} AND repository = '${pull.repository}'`
 		);
 	} else {
-		/**
-		 * works, but should probably type correctly
-		 *
-		 * @ts-expect-error */
-		addToDb.run([
+		addToDb.run(
 			pull.repository,
 			pull.title,
 			pull.number,
@@ -209,7 +204,7 @@ export const setPullRequest = async (pull: PullRequest) => {
 			pull.user_html_url,
 			'(IS)',
 			pull.draft
-		]);
+		);
 	}
 };
 
